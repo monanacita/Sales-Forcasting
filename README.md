@@ -226,20 +226,11 @@ school_state_holidays = pd.concat([
 
 The combined holidays were then incorporated directly into the forecasting model:
 
-```python id="63y2o5"
-model = Prophet(holidays=school_state_holidays)
-```
-
-This allows the model to capture **trend, seasonality, and the effects of both school and state holidays** when forecasting future sales.
-
-```
-
-The combined holiday calendar was then passed directly to Prophet:
-
-```python id="i79xjf"
+```python
 def sales_forecast_with_holidays(Store_ID, sales_df, holidays, periods):
 
     sales_df = sales_df[sales_df['Store'] == Store_ID]
+
     sales_df = sales_df[['Date', 'Sales']].rename(
         columns={'Date': 'ds', 'Sales': 'y'}
     ).sort_values('ds')
@@ -254,10 +245,21 @@ def sales_forecast_with_holidays(Store_ID, sales_df, holidays, periods):
     model.plot_components(forecast)
 ```
 
-This enhanced model captures **trend, seasonality, and holiday effects** when forecasting future store sales.
+The combined school and state holiday calendar is passed to the function through the `holidays` parameter:
 
+```python
+sales_forecast_with_holidays(
+    10,
+    sales_train_df,
+    school_state_holidays,
+    60
+)
+```
+
+This generates a **60-day sales forecast for Store 10** while allowing Prophet to account for **trend, seasonality, and the effects of both school and state holidays**.
 
 ---
+
 
 ## 🛠️ Technologies Used
 

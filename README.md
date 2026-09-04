@@ -164,26 +164,22 @@ Daily average sales are grouped by `Date` and `StoreType` to visualize how the d
 
 ## 🔮 Sales Forecasting with Prophet
 
-The project uses **Prophet** for time-series forecasting.
+### Baseline Prophet Model
 
-A reusable forecasting function is created that allows sales predictions to be generated for a selected store.
+A reusable **Prophet forecasting function** was developed to generate store-level sales forecasts for a selected forecasting period.
 
-```python
-def sales_forcast(Store_ID, sales_df, periods):
+```python id="b44h40"
+def sales_forecast(Store_ID, sales_df, periods):
 
     sales_df = sales_df[sales_df['Store'] == Store_ID]
-
-    sales_df = sales_df.rename(
+    sales_df = sales_df[['Date', 'Sales']].rename(
         columns={'Date': 'ds', 'Sales': 'y'}
-    )
-
-    sales_df = sales_df.sort_values(by='ds')
+    ).sort_values('ds')
 
     model = Prophet()
     model.fit(sales_df)
 
     future = model.make_future_dataframe(periods=periods)
-
     forecast = model.predict(future)
 
     model.plot(forecast)
@@ -192,13 +188,74 @@ def sales_forcast(Store_ID, sales_df, periods):
 
 For example:
 
-```python
-sales_forcast(10, sales_train_df, 60)
+```python id="27pzkq"
+sales_forecast(10, sales_train_df, 60)
 ```
 
-forecasts sales for **Store 10 for the next 60 days**.
+generates a **60-day sales forecast for Store 10** and visualizes the forecast components.
 
-Prophet also allows the forecast to be decomposed into components to better understand underlying time-series patterns.
+### Prophet with Holiday Effects
+
+### Prophet with School and State Holidays
+
+The baseline Prophet model was extended to incorporate **school and state holidays**, allowing the forecast to account for holiday-related changes in sales.
+
+Both holiday types were extracted from the historical data:
+
+```python id="vv1s48"
+# State holidays
+state_holidays = sales_train_df[
+    (sales_train_df['StateHoliday'] != 0) &
+    (sales_train_df['StateHoliday'] != '0')
+]['Date']
+
+# School holidays
+school_holidays = sales_train_df[
+    sales_train_df['SchoolHoliday'] != 0
+]['Date']
+```
+
+The dates were converted into Prophet's required `ds` and `holiday` format and combined into a single holiday calendar:
+
+```python id="w5bxas"
+school_state_holidays = pd.concat([
+    school_holidays,
+    state_holidays
+])
+```
+
+The combined holidays were then incorporated directly into the forecasting model:
+
+```python id="63y2o5"
+model = Prophet(holidays=school_state_holidays)
+```
+
+This allows the model to capture **trend, seasonality, and the effects of both school and state holidays** when forecasting future sales.
+
+```
+
+The combined holiday calendar was then passed directly to Prophet:
+
+```python id="i79xjf"
+def sales_forecast_with_holidays(Store_ID, sales_df, holidays, periods):
+
+    sales_df = sales_df[sales_df['Store'] == Store_ID]
+    sales_df = sales_df[['Date', 'Sales']].rename(
+        columns={'Date': 'ds', 'Sales': 'y'}
+    ).sort_values('ds')
+
+    model = Prophet(holidays=holidays)
+    model.fit(sales_df)
+
+    future = model.make_future_dataframe(periods=periods)
+    forecast = model.predict(future)
+
+    model.plot(forecast)
+    model.plot_components(forecast)
+```
+
+This enhanced model captures **trend, seasonality, and holiday effects** when forecasting future store sales.
+
 
 ---
 
